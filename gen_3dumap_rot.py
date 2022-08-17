@@ -1,4 +1,7 @@
-from os.path import join
+"""
+This script generates a rotating 3D UMAP video
+"""
+
 import numpy as np
 import pandas as pd
 import napari
