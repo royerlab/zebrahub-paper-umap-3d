@@ -15,11 +15,11 @@ from napari_animation import Animation
 
 
 # Colormap name
-colormap_name = 'hls'
-greys = np.array(sns.color_palette('Greys', 100)[9] + (0.25,)).reshape(1, -1)
+colormap_name = 'flare'
+greys = np.array(sns.color_palette('Greys', 100)[9] + (0.10,)).reshape(1, -1)
 
 # Define save path
-savepath = join('output', 'by_fish_timepoint')
+savepath = join('output', 'by_fish_timepoint', colormap_name)
 if not exists(savepath):
     os.makedirs(savepath)
 
