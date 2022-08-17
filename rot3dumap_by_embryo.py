@@ -14,6 +14,8 @@ from napari_animation import Animation
 
 # Colormap name
 colormap_name = 'hls'
+greys = np.array(sns.color_palette('Greys', 100)[9] + (0.25,)).reshape(1, -1)
+
 # Define save path
 savepath = join('output', 'by_fish_timepoint')
 if not exists(savepath):
@@ -31,7 +33,8 @@ uniq_time = uniq_time[:1] + [t for t in uniq_time if 'somite' in t] + [t for t i
 
 # Set parameters for the video
 scale_factor = 1  # scale factor for the final output video size
-nb_steps = 60  # number of steps between two target angles
+fps = 60  # frames per second for the final output video
+nb_steps = fps * 3  # number of steps between two target angles
 
 
 # Generate scatter plot on napari
@@ -48,18 +51,17 @@ viewer = napari.view_points(
 viewer.window.resize(1000+300, 1000)
 
 
-for tp in uniq_time:
+# Highlight all embryos per time point
+for i0, tp in enumerate(uniq_time):
     print(f'Shooting the time point {tp}...')
     # Instantiates a napari animation object for our viewer:
     animation = Animation(viewer)
 
     # Make a colormap
+    lab_color = np.ones((len(df_umap), 4)) * greys
     ind = df_meta_time.get_group(tp)
-    ind_gp = ind.groupby('fish')
-    cmap = sns.color_palette('tab10', len(ind_gp))
-    lab_color = np.zeros((len(df_umap), 4))
-    for i, (n, indf) in enumerate(ind_gp):
-        lab_color[indf.index] = np.array(cmap[i] + (1,)).reshape(1, -1)
+    cmap = sns.color_palette(colormap_name, len(ind))
+    lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
     viewer.layers[0].face_color = lab_color
 
     # Ensures we are in 3D view mode:
@@ -71,15 +73,15 @@ for tp in uniq_time:
     viewer.camera.angles = (0.0, 0.0, 90.0)
     animation.capture_keyframe()
     viewer.camera.angles = (0.0, 180.0, 90.0)
-    animation.capture_keyframe(steps=nb_steps // 2)
+    animation.capture_keyframe(steps=nb_steps)
     viewer.camera.angles = (0.0, 360.0, 90.0)
-    animation.capture_keyframe(steps=nb_steps // 2)
+    animation.capture_keyframe(steps=nb_steps)
 
     # Render animation as a GIF:
     animation.animate(
-        join(savepath, f'rot3DUMAP_{tp}.gif'),
+        join(savepath, f'rot3DUMAP_{tp}.mov'),
         canvas_only=True,
-        fps=60,
+        fps=fps,
         scale_factor=scale_factor
     )
 
