@@ -4,6 +4,8 @@ This script generates rotating 3D UMAP videos by higlighting each embryo
 import os
 from os.path import join, exists
 
+from tqdm import tqdm
+from joblib import delayed, Parallel
 from natsort import natsorted
 import numpy as np
 import pandas as pd
@@ -30,6 +32,7 @@ df_meta = pd.read_csv(join(loadpath, 'meta_data.csv'))
 df_meta_time = df_meta.groupby('timepoint')
 uniq_time = natsorted(df_meta.timepoint.unique())
 uniq_time = uniq_time[:1] + [t for t in uniq_time if 'somite' in t] + [t for t in uniq_time if 'dpf' in t]
+cmap = sns.color_palette(colormap_name, len(uniq_time))
 
 # Set parameters for the video
 scale_factor = 1  # scale factor for the final output video size
@@ -51,18 +54,59 @@ viewer = napari.view_points(
 viewer.window.resize(1000+300, 1000)
 
 
-# Highlight all embryos per time point
-for i0, tp in enumerate(uniq_time):
-    print(f'Shooting the time point {tp}...')
-    # Instantiates a napari animation object for our viewer:
-    animation = Animation(viewer)
+# # Highlight all embryos per time point
+# for i0, tp in enumerate(uniq_time):
+#     print(f'Shooting the time point {tp}...')
+#     # Instantiates a napari animation object for our viewer:
+#     animation = Animation(viewer)
+#
+#     # Make a colormap
+#     lab_color = np.ones((len(df_umap), 4)) * greys
+#     ind = df_meta_time.get_group(tp)
+#     lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
+#     viewer.layers[0].face_color = lab_color
+#
+#     # Ensures we are in 3D view mode:
+#     viewer.dims.ndisplay = 3
+#     # resets the camera view:
+#     viewer.reset_view()
+#
+#     # Start recording key frames after changing viewer state:
+#     viewer.camera.angles = (0.0, 0.0, 90.0)
+#     animation.capture_keyframe()
+#     viewer.camera.angles = (0.0, 180.0, 90.0)
+#     animation.capture_keyframe(steps=nb_steps)
+#     viewer.camera.angles = (0.0, 360.0, 90.0)
+#     animation.capture_keyframe(steps=nb_steps)
+#
+#     # Render animation as a GIF:
+#     animation.animate(
+#         join(savepath, f'rot3DUMAP_{tp}.mov'),
+#         canvas_only=True,
+#         fps=fps,
+#         scale_factor=scale_factor
+#     )
 
+
+def single_proc(i0, tp):
     # Make a colormap
     lab_color = np.ones((len(df_umap), 4)) * greys
     ind = df_meta_time.get_group(tp)
-    cmap = sns.color_palette(colormap_name, len(ind))
     lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
-    viewer.layers[0].face_color = lab_color
+
+    viewer = napari.view_points(
+        df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
+        scale=(100,) * 3,
+        shading='spherical',
+        size=0.06,
+        name='umap3d',
+        edge_width=0,
+        face_color=lab_color,
+        ndisplay=3,
+    )
+    viewer.window.resize(1000 + 300, 1000)
+
+    animation = Animation(viewer)
 
     # Ensures we are in 3D view mode:
     viewer.dims.ndisplay = 3
@@ -85,3 +129,7 @@ for i0, tp in enumerate(uniq_time):
         scale_factor=scale_factor
     )
 
+
+_ = Parallel(n_jobs=10)(
+    delayed(single_proc)(i, tp) for i, tp in enumerate(tqdm(uniq_time))
+)
