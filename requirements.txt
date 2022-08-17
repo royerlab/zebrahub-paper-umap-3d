@@ -5,3 +5,4 @@ seaborn
 matplotlib
 gdown
 umap-learn
+natsort

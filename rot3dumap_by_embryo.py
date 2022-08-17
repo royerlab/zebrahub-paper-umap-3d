@@ -1,7 +1,8 @@
 """
 This script generates rotating 3D UMAP videos by higlighting each embryo
 """
-from os.path import join
+import os
+from os.path import join, exists
 
 from natsort import natsorted
 import numpy as np
@@ -13,10 +14,15 @@ from napari_animation import Animation
 
 # Colormap name
 colormap_name = 'hls'
+# Define save path
+savepath = join('output', 'by_fish_timepoint')
+if not exists(savepath):
+    os.makedirs(savepath)
 
 # Load UMAP coordinates and their metadata
-df_umap = pd.read_csv('umap_coords.csv')
-df_meta = pd.read_csv('meta_data.csv')
+loadpath = 'zebrahub/final_objects/v1'
+df_umap = pd.read_csv(join(loadpath, 'umap_coords.csv'))
+df_meta = pd.read_csv(join(loadpath, 'meta_data.csv'))
 
 # Sort fish name by time point
 df_meta_time = df_meta.groupby('timepoint')
@@ -66,28 +72,9 @@ for tp in uniq_time:
 
         # Render animation as a GIF:
         animation.animate(
-            join('output', 'by_fish_timepoint', f'rot3DUMAP_{tp}.gif'),
+            join(savepath, f'rot3DUMAP_{tp}.gif'),
             canvas_only=True,
             fps=60,
             scale_factor=scale_factor
         )
-
-
-# # Make a legend
-# import matplotlib.pyplot as plt
-#
-# plt.style.use('dark_background')
-# fig, ax = plt.subplots(1)
-# legendFig = plt.figure(figsize=(1.8, 2.4))
-# plist = []
-# i = 0
-# leg_names = []
-# for fmly in uniq_uniorg:
-#     plist.append(
-#         ax.scatter(i, i, c=np.array(cmap[i] + (1,)).reshape(1, -1), s=40, label=fmly)
-#     )
-#     i += 1
-#     leg_names.append(fmly)
-# legendFig.legend(plist, leg_names, loc='center', frameon=False)
-# legendFig.savefig(f'legend_{colormap_name}.png', dpi=300)
 
