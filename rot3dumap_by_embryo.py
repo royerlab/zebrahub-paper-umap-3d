@@ -13,6 +13,7 @@ import napari
 import seaborn as sns
 from napari_animation import Animation
 import matplotlib.pyplot as plt
+import colorcet as cc
 
 
 # Colormap name
@@ -20,7 +21,7 @@ colormap_name = 'crest'
 greys = np.array(sns.color_palette('Greys', 100)[0] + (0.15,)).reshape(1, -1)
 
 # Define save path
-savepath = join('output', 'by_fish_timepoint', colormap_name)
+savepath = join('output', 'by_fish_timepoint', colormap_name + '_flat')
 if not exists(savepath):
     os.makedirs(savepath)
 
@@ -33,7 +34,10 @@ df_meta = pd.read_csv(join(loadpath, 'meta_data.csv'))
 df_meta_time = df_meta.groupby('timepoint')
 uniq_time = natsorted(df_meta.timepoint.unique())
 uniq_time = uniq_time[:1] + [t for t in uniq_time if 'somite' in t] + [t for t in uniq_time if 'dpf' in t]
-cmap = sns.color_palette(colormap_name, len(uniq_time))
+if colormap_name == 'crest':
+    cmap = sns.color_palette(cc.isolum, 256)[::25][::-1]
+else:
+    cmap = sns.color_palette(colormap_name, len(uniq_time))
 
 # Set parameters for the video
 div = 3
@@ -45,6 +49,7 @@ nb_steps = fps * div  # number of steps between two target angles
 """
 Generate a rotating UMAP with all timepoints with different colors
 """
+print('Generating all timepoints...')
 lab_color = np.zeros((len(df_umap), 4))
 for i0, tp in enumerate(uniq_time):
     ind = df_meta_time.get_group(tp)
@@ -53,13 +58,14 @@ for i0, tp in enumerate(uniq_time):
 viewer = napari.view_points(
     df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
     scale=(100,) * 3,
-    shading='spherical',
+    shading='none',
     size=0.06,
     name='umap3d',
     edge_width=0,
     face_color=lab_color,
     ndisplay=3,
 )
+viewer.window.resize(1000 + 300, 1000)
 
 # Instantiates a napari animation object for our viewer:
 animation = Animation(viewer)
@@ -116,6 +122,7 @@ legendFig.savefig(join(savepath, 'legend_alltp_transparent.png'), dpi=300, trans
 """
 Generate a rotating UMAP with global annotation
 """
+print('Generating global annotation...')
 df_meta2 = pd.read_csv('zebrahub/final_objects/v2/meta_data.csv')
 df_meta2_ga = df_meta2.groupby('global_annotation')
 cmap2 = sns.color_palette('hls', len(df_meta2_ga))
@@ -171,6 +178,7 @@ legendFig.savefig(join(savepath, 'legend_global_annotation_transparent.png'), dp
 """
 Generate 180 + 60 deg rotation for each time point with different colors
 """
+print('Generating each timepoint...')
 
 
 def single_proc(i0, tp):
@@ -180,7 +188,7 @@ def single_proc(i0, tp):
     viewer = napari.view_points(
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][~ind1],
         scale=(100,) * 3,
-        shading='spherical',
+        shading='none',
         size=0.06,
         name='others',
         edge_width=0,
@@ -190,7 +198,7 @@ def single_proc(i0, tp):
     viewer.add_points(
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
         scale=(100,) * 3,
-        shading='spherical',
+        shading='none',
         size=0.09,
         name=tp,
         edge_width=0,
@@ -228,6 +236,7 @@ _ = Parallel(n_jobs=10)(
 """
 Generate 180 + 60 deg rotation for each time point with only one embryo that has the largest data points
 """
+print('Generating each timepoint with single embryo...')
 
 
 def single_embryo(i0, tp):
@@ -239,7 +248,7 @@ def single_embryo(i0, tp):
     viewer = napari.view_points(
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][~ind1],
         scale=(100,) * 3,
-        shading='spherical',
+        shading='none',
         size=0.06,
         name='others',
         edge_width=0,
@@ -249,7 +258,7 @@ def single_embryo(i0, tp):
     viewer.add_points(
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
         scale=(100,) * 3,
-        shading='spherical',
+        shading='none',
         size=0.09,
         name=tp,
         edge_width=0,
