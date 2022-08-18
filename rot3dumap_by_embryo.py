@@ -73,10 +73,46 @@ viewer.camera.angles = (0.0, 180.0, 90.0)
 animation.capture_keyframe(steps=nb_steps)
 viewer.camera.angles = (0.0, 360.0, 90.0)
 animation.capture_keyframe(steps=nb_steps)
+viewer.camera.angles = (0.0, 60.0, 90.0)
+animation.capture_keyframe(steps=nb_steps // 3)
 
 # Render animation as a GIF:
 animation.animate(
     join(savepath, f'rot3DUMAP_alltp.mov'),
+    canvas_only=True,
+    fps=fps,
+    scale_factor=scale_factor
+)
+
+df_meta2 = pd.read_csv('meta_data_v2.csv')
+df_meta2_ga = df_meta2.groupby('global_annotation')
+cmap2 = sns.color_palette('hls', len(df_meta2_ga))
+lab_color = np.zeros((len(df_umap), 4))
+for i, (n, ind) in enumerate(df_meta2_ga):
+    lab_color[ind.index] = np.array(cmap2[i] + (1,)).reshape(1, -1)
+viewer.layers[0].face_color = lab_color
+
+# Instantiates a napari animation object for our viewer:
+animation = Animation(viewer)
+
+# Ensures we are in 3D view mode:
+viewer.dims.ndisplay = 3
+# resets the camera view:
+viewer.reset_view()
+
+# Start recording key frames after changing viewer state:
+viewer.camera.angles = (0.0, 0.0, 90.0)
+animation.capture_keyframe(steps=nb_steps)
+viewer.camera.angles = (0.0, 180.0, 90.0)
+animation.capture_keyframe(steps=nb_steps)
+viewer.camera.angles = (0.0, 360.0, 90.0)
+animation.capture_keyframe(steps=nb_steps)
+viewer.camera.angles = (0.0, 60.0, 90.0)
+animation.capture_keyframe(steps=nb_steps // 3)
+
+# Render animation as a GIF:
+animation.animate(
+    join(savepath, f'rot3DUMAP_global.mov'),
     canvas_only=True,
     fps=fps,
     scale_factor=scale_factor
