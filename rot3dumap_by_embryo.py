@@ -225,7 +225,7 @@ def single_embryo(i0, tp):
 
 
 _ = Parallel(n_jobs=10)(
-    delayed(single_proc)(i, tp) for i, tp in enumerate(tqdm(uniq_time))
+    delayed(single_embryo)(i, tp) for i, tp in enumerate(tqdm(uniq_time))
 )
 
 
