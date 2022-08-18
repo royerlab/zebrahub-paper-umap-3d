@@ -3,7 +3,7 @@ This script generates rotating 3D UMAP videos by higlighting each embryo
 """
 import os
 from os.path import join, exists
-
+import string
 from tqdm import tqdm
 from joblib import delayed, Parallel
 from natsort import natsorted
@@ -12,6 +12,7 @@ import pandas as pd
 import napari
 import seaborn as sns
 from napari_animation import Animation
+import matplotlib.pyplot as plt
 
 
 # Colormap name
@@ -41,7 +42,9 @@ fps = 60  # frames per second for the final output video
 nb_steps = fps * div  # number of steps between two target angles
 
 
-# Generate a rotating UMAP with all timepoints with different colors
+"""
+Generate a rotating UMAP with all timepoints with different colors
+"""
 lab_color = np.zeros((len(df_umap), 4))
 for i0, tp in enumerate(uniq_time):
     ind = df_meta_time.get_group(tp)
@@ -84,8 +87,35 @@ animation.animate(
     scale_factor=scale_factor
 )
 
+# generate legend
+plt.style.use('dark_background')
+fig, ax = plt.subplots(1)
+legendFig = plt.figure(figsize=(1.8, 2.4))
+plist = []
+leg_names = []
+alphabets, digits = string.ascii_lowercase, string.digits
+for i, n in enumerate(uniq_time):
+    num = n.rstrip(alphabets).rstrip()
+    if num[0] == '0':
+        num = num[1:]
+    nam = n.strip(digits).strip()
+    if num == '':
+        n = nam
+    else:
+        n = ' '.join([num, nam])
 
-# Generate a rotating UMAP with global annotation
+    plist.append(
+        ax.scatter(i, i, c=np.array(cmap[i] + (1,)).reshape(1, -1), s=40, label=n)
+    )
+    leg_names.append(n)
+legendFig.legend(plist, leg_names, loc='center', frameon=False)
+legendFig.savefig(join(savepath, 'legend_alltp.png'), dpi=300)
+legendFig.savefig(join(savepath, 'legend_alltp_transparent.png'), dpi=300, transparent=True)
+
+
+"""
+Generate a rotating UMAP with global annotation
+"""
 df_meta2 = pd.read_csv('zebrahub/final_objects/v2/meta_data.csv')
 df_meta2_ga = df_meta2.groupby('global_annotation')
 cmap2 = sns.color_palette('hls', len(df_meta2_ga))
@@ -120,8 +150,29 @@ animation.animate(
     scale_factor=scale_factor
 )
 
+# generate legend
+plt.style.use('dark_background')
+fig, ax = plt.subplots(1)
+legendFig = plt.figure(figsize=(2.4, 2.4))
+plist = []
+leg_names = []
+alphabets, digits = string.ascii_lowercase, string.digits
+for i, n in enumerate(df_meta2_ga.groups.keys()):
+    n = n.replace('_', ' ')
+    plist.append(
+        ax.scatter(i, i, c=np.array(cmap[i] + (1,)).reshape(1, -1), s=40, label=n)
+    )
+    leg_names.append(n)
+legendFig.legend(plist, leg_names, loc='center', frameon=False)
+legendFig.savefig(join(savepath, 'legend_global_annotation.png'), dpi=300)
+legendFig.savefig(join(savepath, 'legend_global_annotation_transparent.png'), dpi=300, transparent=True)
 
-# Generate 180 + 60 deg rotation for each time point with different colors
+
+"""
+Generate 180 + 60 deg rotation for each time point with different colors
+"""
+
+
 def single_proc(i0, tp):
     # Make a colormap
     ind = df_meta_time.get_group(tp)
@@ -174,7 +225,11 @@ _ = Parallel(n_jobs=10)(
 )
 
 
-# Generate 180 + 60 deg rotation for each time point with only one embryo that has the largest data points
+"""
+Generate 180 + 60 deg rotation for each time point with only one embryo that has the largest data points
+"""
+
+
 def single_embryo(i0, tp):
     # Make a colormap
     ind = df_meta_time.get_group(tp)
@@ -229,3 +284,32 @@ _ = Parallel(n_jobs=10)(
 )
 
 
+# generate legend
+plt.style.use('dark_background')
+fig, ax = plt.subplots(1)
+legendFig = plt.figure(figsize=(2.4, 2.4))
+plist = []
+leg_names = []
+alphabets, digits = string.ascii_lowercase, string.digits
+for i, tp in enumerate(uniq_time):
+    num = tp.rstrip(alphabets).rstrip()
+    if num[0] == '0':
+        num = num[1:]
+    nam = tp.strip(digits).strip()
+    if num == '':
+        n = nam
+    else:
+        n = ' '.join([num, nam])
+
+    ind = df_meta_time.get_group(tp)
+    ind_counts = ind.value_counts('fish')
+    fish_id = ind_counts.index[ind_counts.argmax()]
+    n = f'{n} ({fish_id})'
+
+    plist.append(
+        ax.scatter(i, i, c=np.array(cmap[i] + (1,)).reshape(1, -1), s=40, label=n)
+    )
+    leg_names.append(n)
+legendFig.legend(plist, leg_names, loc='center', frameon=False)
+legendFig.savefig(join(savepath, 'legend_alltp_1embryo.png'), dpi=300)
+legendFig.savefig(join(savepath, 'legend_alltp_1embryo_transparent.png'), dpi=300, transparent=True)
