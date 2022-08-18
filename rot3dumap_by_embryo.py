@@ -41,52 +41,46 @@ fps = 60  # frames per second for the final output video
 nb_steps = fps * div  # number of steps between two target angles
 
 
-# # Generate scatter plot on napari
-# viewer = napari.view_points(
-#     df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
-#     scale=(100,) * 3,
-#     shading='spherical',
-#     size=0.06,
-#     name='umap3d',
-#     edge_width=0,
-#     face_color=np.zeros((1, 4)),
-#     ndisplay=3,
-# )
-# viewer.window.resize(1000+300, 1000)
+# Highlight all time points with different colors
+lab_color = np.zeros((len(df_umap), 4))
+for i0, tp in enumerate(uniq_time):
+    ind = df_meta_time.get_group(tp)
+    lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
 
+viewer = napari.view_points(
+    df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
+    scale=(100,) * 3,
+    shading='spherical',
+    size=0.06,
+    name='umap3d',
+    edge_width=0,
+    face_color=lab_color,
+    ndisplay=3,
+)
 
-# # Highlight all embryos per time point
-# for i0, tp in enumerate(uniq_time):
-#     print(f'Shooting the time point {tp}...')
-#     # Instantiates a napari animation object for our viewer:
-#     animation = Animation(viewer)
-#
-#     # Make a colormap
-#     lab_color = np.ones((len(df_umap), 4)) * greys
-#     ind = df_meta_time.get_group(tp)
-#     lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
-#     viewer.layers[0].face_color = lab_color
-#
-#     # Ensures we are in 3D view mode:
-#     viewer.dims.ndisplay = 3
-#     # resets the camera view:
-#     viewer.reset_view()
-#
-#     # Start recording key frames after changing viewer state:
-#     viewer.camera.angles = (0.0, 0.0, 90.0)
-#     animation.capture_keyframe()
-#     viewer.camera.angles = (0.0, 180.0, 90.0)
-#     animation.capture_keyframe(steps=nb_steps)
-#     viewer.camera.angles = (0.0, 360.0, 90.0)
-#     animation.capture_keyframe(steps=nb_steps)
-#
-#     # Render animation as a GIF:
-#     animation.animate(
-#         join(savepath, f'rot3DUMAP_{tp}.mov'),
-#         canvas_only=True,
-#         fps=fps,
-#         scale_factor=scale_factor
-#     )
+# Instantiates a napari animation object for our viewer:
+animation = Animation(viewer)
+
+# Ensures we are in 3D view mode:
+viewer.dims.ndisplay = 3
+# resets the camera view:
+viewer.reset_view()
+
+# Start recording key frames after changing viewer state:
+viewer.camera.angles = (0.0, 0.0, 90.0)
+animation.capture_keyframe(steps=nb_steps)
+viewer.camera.angles = (0.0, 180.0, 90.0)
+animation.capture_keyframe(steps=nb_steps)
+viewer.camera.angles = (0.0, 360.0, 90.0)
+animation.capture_keyframe(steps=nb_steps)
+
+# Render animation as a GIF:
+animation.animate(
+    join(savepath, f'rot3DUMAP_alltp.mov'),
+    canvas_only=True,
+    fps=fps,
+    scale_factor=scale_factor
+)
 
 
 def single_proc(i0, tp):
