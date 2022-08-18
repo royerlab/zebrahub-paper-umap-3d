@@ -15,8 +15,8 @@ from napari_animation import Animation
 
 
 # Colormap name
-colormap_name = 'flare'
-greys = np.array(sns.color_palette('Greys', 100)[9] + (0.10,)).reshape(1, -1)
+colormap_name = 'crest'
+greys = np.array(sns.color_palette('Greys', 100)[0] + (0.15,)).reshape(1, -1)
 
 # Define save path
 savepath = join('output', 'by_fish_timepoint', colormap_name)
@@ -40,18 +40,18 @@ fps = 60  # frames per second for the final output video
 nb_steps = fps * 3  # number of steps between two target angles
 
 
-# Generate scatter plot on napari
-viewer = napari.view_points(
-    df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
-    scale=(100,) * 3,
-    shading='spherical',
-    size=0.06,
-    name='umap3d',
-    edge_width=0,
-    face_color=np.zeros((1, 4)),
-    ndisplay=3,
-)
-viewer.window.resize(1000+300, 1000)
+# # Generate scatter plot on napari
+# viewer = napari.view_points(
+#     df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
+#     scale=(100,) * 3,
+#     shading='spherical',
+#     size=0.06,
+#     name='umap3d',
+#     edge_width=0,
+#     face_color=np.zeros((1, 4)),
+#     ndisplay=3,
+# )
+# viewer.window.resize(1000+300, 1000)
 
 
 # # Highlight all embryos per time point
@@ -90,19 +90,29 @@ viewer.window.resize(1000+300, 1000)
 
 def single_proc(i0, tp):
     # Make a colormap
-    lab_color = np.ones((len(df_umap), 4)) * greys
+    # lab_color = np.ones((len(df_umap), 4)) * greys
     ind = df_meta_time.get_group(tp)
-    lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
-
+    # lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
+    ind1 = df_meta.index.isin(ind.index)
     viewer = napari.view_points(
-        df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
+        df_umap[['UMAP1', 'UMAP2', 'UMAP3']][~ind1],
         scale=(100,) * 3,
         shading='spherical',
         size=0.06,
-        name='umap3d',
+        name='others',
         edge_width=0,
-        face_color=lab_color,
+        face_color=greys,
         ndisplay=3,
+    )
+    viewer.add_points(
+        df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
+        scale=(100,) * 3,
+        shading='spherical',
+        size=0.09,
+        name=tp,
+        edge_width=0,
+        face_color=np.array(cmap[i0] + (1,)).reshape(1, -1),
+        blending='translucent_no_depth',
     )
     viewer.window.resize(1000 + 300, 1000)
 
@@ -114,12 +124,15 @@ def single_proc(i0, tp):
     viewer.reset_view()
 
     # Start recording key frames after changing viewer state:
-    viewer.camera.angles = (0.0, 0.0, 90.0)
+    shift = i0 * 180 // 3
+    viewer.camera.angles = (0.0, 0.0 + shift, 90.0)
     animation.capture_keyframe()
-    viewer.camera.angles = (0.0, 180.0, 90.0)
+    viewer.camera.angles = (0.0, 180.0 + shift, 90.0)
     animation.capture_keyframe(steps=nb_steps)
-    viewer.camera.angles = (0.0, 360.0, 90.0)
+    viewer.camera.angles = (0.0, 360.0 + shift, 90.0)
     animation.capture_keyframe(steps=nb_steps)
+    viewer.camera.angles = (0.0, 180.0 // 3 + shift, 90.0)
+    animation.capture_keyframe(steps=nb_steps // 3)
 
     # Render animation as a GIF:
     animation.animate(
