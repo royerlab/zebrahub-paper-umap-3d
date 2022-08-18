@@ -41,7 +41,7 @@ fps = 60  # frames per second for the final output video
 nb_steps = fps * div  # number of steps between two target angles
 
 
-# Highlight all time points with different colors
+# Generate a rotating UMAP with all timepoints with different colors
 lab_color = np.zeros((len(df_umap), 4))
 for i0, tp in enumerate(uniq_time):
     ind = df_meta_time.get_group(tp)
@@ -84,6 +84,8 @@ animation.animate(
     scale_factor=scale_factor
 )
 
+
+# Generate a rotating UMAP with global annotation
 df_meta2 = pd.read_csv('meta_data_v2.csv')
 df_meta2_ga = df_meta2.groupby('global_annotation')
 cmap2 = sns.color_palette('hls', len(df_meta2_ga))
@@ -119,11 +121,10 @@ animation.animate(
 )
 
 
+# Generate 180 + 60 deg rotation for each time point with different colors
 def single_proc(i0, tp):
     # Make a colormap
-    # lab_color = np.ones((len(df_umap), 4)) * greys
     ind = df_meta_time.get_group(tp)
-    # lab_color[ind.index] = np.array(cmap[i0] + (1,)).reshape(1, -1)
     ind1 = df_meta.index.isin(ind.index)
     viewer = napari.view_points(
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][~ind1],
@@ -171,3 +172,60 @@ def single_proc(i0, tp):
 _ = Parallel(n_jobs=10)(
     delayed(single_proc)(i, tp) for i, tp in enumerate(tqdm(uniq_time))
 )
+
+
+# Generate 180 + 60 deg rotation for each time point with only one embryo that has the largest data points
+def single_embryo(i0, tp):
+    # Make a colormap
+    ind = df_meta_time.get_group(tp)
+    ind_counts = ind.value_counts('fish')
+    fish_id = ind_counts.index[ind_counts.argmax()]
+    ind1 = df_meta['fish'] == fish_id
+    viewer = napari.view_points(
+        df_umap[['UMAP1', 'UMAP2', 'UMAP3']][~ind1],
+        scale=(100,) * 3,
+        shading='spherical',
+        size=0.06,
+        name='others',
+        edge_width=0,
+        face_color=greys,
+        ndisplay=3,
+    )
+    viewer.add_points(
+        df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
+        scale=(100,) * 3,
+        shading='spherical',
+        size=0.09,
+        name=tp,
+        edge_width=0,
+        face_color=np.array(cmap[i0] + (1,)).reshape(1, -1),
+        blending='translucent_no_depth',
+    )
+    viewer.window.resize(1000 + 300, 1000)
+
+    animation = Animation(viewer)
+
+    # Ensures we are in 3D view mode:
+    viewer.dims.ndisplay = 3
+    # resets the camera view:
+    viewer.reset_view()
+
+    # Start recording key frames after changing viewer state:
+    for i in range(div + 2):
+        viewer.camera.angles = (0.0, i * 180 // div + (i0 * 180), 90.0)
+        animation.capture_keyframe(steps=nb_steps // div)
+
+    # Render animation as a GIF:
+    animation.animate(
+        join(savepath, f'rot3DUMAP_{fish_id}_{tp}.mov'),
+        canvas_only=True,
+        fps=fps,
+        scale_factor=scale_factor
+    )
+
+
+_ = Parallel(n_jobs=10)(
+    delayed(single_proc)(i, tp) for i, tp in enumerate(tqdm(uniq_time))
+)
+
+
