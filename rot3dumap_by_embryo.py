@@ -125,9 +125,8 @@ def single_proc(i0, tp):
     viewer.reset_view()
 
     # Start recording key frames after changing viewer state:
-    shift = 180 // div
     for i in range(div + 2):
-        viewer.camera.angles = (0.0, shift * (i + i0), 90.0)
+        viewer.camera.angles = (0.0, i * 180 // div + (i0 * 180), 90.0)
         animation.capture_keyframe(steps=nb_steps // div)
 
     # Render animation as a GIF:
