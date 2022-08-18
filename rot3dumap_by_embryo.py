@@ -35,9 +35,10 @@ uniq_time = uniq_time[:1] + [t for t in uniq_time if 'somite' in t] + [t for t i
 cmap = sns.color_palette(colormap_name, len(uniq_time))
 
 # Set parameters for the video
+div = 3
 scale_factor = 1  # scale factor for the final output video size
 fps = 60  # frames per second for the final output video
-nb_steps = fps * 3  # number of steps between two target angles
+nb_steps = fps * div  # number of steps between two target angles
 
 
 # # Generate scatter plot on napari
@@ -124,15 +125,10 @@ def single_proc(i0, tp):
     viewer.reset_view()
 
     # Start recording key frames after changing viewer state:
-    shift = i0 * 180 // 3
-    viewer.camera.angles = (0.0, 0.0 + shift, 90.0)
-    animation.capture_keyframe()
-    viewer.camera.angles = (0.0, 180.0 + shift, 90.0)
-    animation.capture_keyframe(steps=nb_steps)
-    viewer.camera.angles = (0.0, 360.0 + shift, 90.0)
-    animation.capture_keyframe(steps=nb_steps)
-    viewer.camera.angles = (0.0, 180.0 // 3 + shift, 90.0)
-    animation.capture_keyframe(steps=nb_steps // 3)
+    shift = 180 // div
+    for i in range(div + 2):
+        viewer.camera.angles = (0.0, shift * (i + i0), 90.0)
+        animation.capture_keyframe(steps=nb_steps // div)
 
     # Render animation as a GIF:
     animation.animate(
