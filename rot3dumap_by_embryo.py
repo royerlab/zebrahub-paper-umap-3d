@@ -34,10 +34,11 @@ df_meta = pd.read_csv(join(loadpath, 'meta_data.csv'))
 df_meta_time = df_meta.groupby('timepoint')
 uniq_time = natsorted(df_meta.timepoint.unique())
 uniq_time = uniq_time[:1] + [t for t in uniq_time if 'somite' in t] + [t for t in uniq_time if 'dpf' in t]
-if colormap_name == 'crest':
+if colormap_name == 'isolum':
     cmap = sns.color_palette(cc.isolum, 256)[::25][::-1]
 else:
     cmap = sns.color_palette(colormap_name, len(uniq_time))
+    cmap = [tuple((i ** 0.7)) for i in np.array(cmap)]
 
 # Set parameters for the video
 div = 3
@@ -199,7 +200,7 @@ def single_proc(i0, tp):
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
         scale=(100,) * 3,
         shading='none',
-        size=0.09,
+        size=0.06,
         name=tp,
         edge_width=0,
         face_color=np.array(cmap[i0] + (1,)).reshape(1, -1),
@@ -259,7 +260,7 @@ def single_embryo(i0, tp):
         df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
         scale=(100,) * 3,
         shading='none',
-        size=0.09,
+        size=0.06,
         name=tp,
         edge_width=0,
         face_color=np.array(cmap[i0] + (1,)).reshape(1, -1),
