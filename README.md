@@ -15,12 +15,13 @@ If you are on a M1 Mac, you should try instead the `setup_env.sh` script.
 ## Generate a rotating 3D UMAP animation with all timepoints annotation
 
 ### Load data
+
 ```python
 import pandas as pd
 
-df_umap = pd.read_csv('umap_coords.csv')
-df_meta = pd.read_csv('meta_data_timepoint.csv')
-df_global_annotation = pd.read_csv('meta_data_globalannotation.csv')
+df_umap = pd.read_csv('data/umap_coords.csv')
+df_meta = pd.read_csv('data/meta_data_timepoint.csv')
+df_global_annotation = pd.read_csv('data/meta_data_globalannotation.csv')
 
 ```
 
