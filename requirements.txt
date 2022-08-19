@@ -4,5 +4,5 @@ napari-animation >= 0.0.2
 seaborn
 matplotlib
 gdown
-umap-learn
 natsort
+colorcet
