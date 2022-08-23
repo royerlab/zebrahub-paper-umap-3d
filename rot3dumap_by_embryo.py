@@ -26,9 +26,9 @@ if not exists(savepath):
     os.makedirs(savepath)
 
 # Load UMAP coordinates and their metadata
-loadpath = 'zebrahub/final_objects/v1'
+loadpath = 'data'
 df_umap = pd.read_csv(join(loadpath, 'umap_coords.csv'))
-df_meta = pd.read_csv(join(loadpath, 'meta_data.csv'))
+df_meta = pd.read_csv(join(loadpath, 'meta_data_timepoint.csv'))
 
 # Sort fish name by time point
 df_meta_time = df_meta.groupby('timepoint')
