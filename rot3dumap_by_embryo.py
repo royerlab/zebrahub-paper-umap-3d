@@ -43,7 +43,7 @@ else:
 # Set parameters for the video
 div = 3
 scale_factor = 1  # scale factor for the final output video size
-fps = 60  # frames per second for the final output video
+fps = 20  # frames per second for the final output video
 nb_steps = fps * div  # number of steps between two target angles
 
 
@@ -66,7 +66,7 @@ viewer = napari.view_points(
     face_color=lab_color,
     ndisplay=3,
 )
-viewer.window.resize(1000 + 300, 1000)
+viewer.window.resize(1024 + 300, 1024)
 
 # Instantiates a napari animation object for our viewer:
 animation = Animation(viewer)
@@ -83,8 +83,8 @@ viewer.camera.angles = (0.0, 180.0, 90.0)
 animation.capture_keyframe(steps=nb_steps)
 viewer.camera.angles = (0.0, 360.0, 90.0)
 animation.capture_keyframe(steps=nb_steps)
-viewer.camera.angles = (0.0, 60.0, 90.0)
-animation.capture_keyframe(steps=nb_steps // 3)
+# viewer.camera.angles = (0.0, 60.0, 90.0)
+# animation.capture_keyframe(steps=nb_steps // 3)
 
 # Render animation as a GIF:
 animation.animate(
@@ -124,7 +124,7 @@ legendFig.savefig(join(savepath, 'legend_alltp_transparent.png'), dpi=300, trans
 Generate a rotating UMAP with global annotation
 """
 print('Generating global annotation...')
-df_meta2 = pd.read_csv('zebrahub/final_objects/v2/meta_data.csv')
+df_meta2 = pd.read_csv('data/meta_data_globalannotation.csv')
 df_meta2_ga = df_meta2.groupby('global_annotation')
 cmap2 = sns.color_palette('hls', len(df_meta2_ga))
 lab_color = np.zeros((len(df_umap), 4))

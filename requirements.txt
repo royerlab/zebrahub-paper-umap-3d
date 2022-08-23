@@ -6,3 +6,4 @@ matplotlib
 gdown
 natsort
 colorcet
+joblib
