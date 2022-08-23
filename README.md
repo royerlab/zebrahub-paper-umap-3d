@@ -1,11 +1,11 @@
-# zebra_3DUMAP
-Generate 3D UMAPs of zebra fish
+# zebrahub_umap_3d
+Generate 3D UMAPs of zebrahub
 
 ## Installation
 
 ```bash
-conda create -n napari3drot python=3.9
-conda activate napari3drot
+conda create -n zebrahub_umap_3d python=3.9
+conda activate zebrahub_umap_3d
 pip install -r requirements.txt
 ```
 
