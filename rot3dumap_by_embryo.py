@@ -124,7 +124,7 @@ legendFig.savefig(join(savepath, 'legend_alltp_transparent.png'), dpi=300, trans
 Generate a rotating UMAP with global annotation
 """
 print('Generating global annotation...')
-df_meta2 = pd.read_csv('data/meta_data_globalannotation.csv')
+df_meta2 = pd.read_csv(join(loadpath, 'meta_data_globalannotation.csv'))
 df_meta2_ga = df_meta2.groupby('global_annotation')
 cmap2 = sns.color_palette('hls', len(df_meta2_ga))
 lab_color = np.zeros((len(df_umap), 4))
