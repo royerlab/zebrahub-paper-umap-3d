@@ -18,7 +18,7 @@ import colorcet as cc
 
 # Colormap name
 colormap_name = 'crest'
-greys = np.array(sns.color_palette('Greys', 100)[0] + (0.15,)).reshape(1, -1)
+greys = np.array(sns.color_palette('Greys', 100)[0] + (1,)).reshape(1, -1)
 
 # Define save path
 savepath = join('output', 'by_fish_timepoint', colormap_name + '_flat')
@@ -43,8 +43,14 @@ else:
 # Set parameters for the video
 div = 3
 scale_factor = 1  # scale factor for the final output video size
-fps = 20  # frames per second for the final output video
+fps = 60  # frames per second for the final output video
+quality = 9
 nb_steps = fps * div  # number of steps between two target angles
+viewer_res = 2048
+viewer_width = viewer_res + 300 - 6
+viewer_height = viewer_res + 89
+viewer_theme = 'dark'
+
 
 
 """
@@ -60,13 +66,32 @@ viewer = napari.view_points(
     df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
     scale=(100,) * 3,
     shading='none',
-    size=0.06,
+    size=0.035,
     name='umap3d',
     edge_width=0,
     face_color=lab_color,
+    edge_color=lab_color,
     ndisplay=3,
 )
-viewer.window.resize(1024 + 300, 1024)
+
+greys_layer = viewer.add_points(
+    df_umap[['UMAP1', 'UMAP2', 'UMAP3']],
+    scale=(100,) * 3,
+    shading='none',
+    size=0.06,
+    name='others',
+    edge_width=0,
+    face_color=greys,
+    blending='translucent_no_depth',
+    opacity=0.02
+    #
+)
+
+
+viewer.theme = viewer_theme
+viewer.window.resize(viewer_width, viewer_height)
+
+napari.run()
 
 # Instantiates a napari animation object for our viewer:
 animation = Animation(viewer)
@@ -86,13 +111,14 @@ animation.capture_keyframe(steps=nb_steps)
 # viewer.camera.angles = (0.0, 60.0, 90.0)
 # animation.capture_keyframe(steps=nb_steps // 3)
 
-# Render animation as a GIF:
-animation.animate(
-    join(savepath, f'rot3DUMAP_alltp.mov'),
-    canvas_only=True,
-    fps=fps,
-    scale_factor=scale_factor
-)
+#Render animation as a GIF:
+# animation.animate(
+#     join(savepath, f'rot3DUMAP_alltp.mov'),
+#     canvas_only=True,
+#     fps=fps,
+#     quality=quality,
+#     scale_factor=scale_factor
+# )
 
 # generate legend
 plt.style.use('dark_background')
@@ -120,6 +146,7 @@ legendFig.savefig(join(savepath, 'legend_alltp.png'), dpi=300)
 legendFig.savefig(join(savepath, 'legend_alltp_transparent.png'), dpi=300, transparent=True)
 
 
+
 """
 Generate a rotating UMAP with global annotation
 """
@@ -131,6 +158,8 @@ lab_color = np.zeros((len(df_umap), 4))
 for i, (n, ind) in enumerate(df_meta2_ga):
     lab_color[ind.index] = np.array(cmap2[i] + (1,)).reshape(1, -1)
 viewer.layers[0].face_color = lab_color
+
+greys_layer.opacity = 0.06
 
 # Instantiates a napari animation object for our viewer:
 animation = Animation(viewer)
@@ -147,16 +176,17 @@ viewer.camera.angles = (0.0, 180.0, 90.0)
 animation.capture_keyframe(steps=nb_steps)
 viewer.camera.angles = (0.0, 360.0, 90.0)
 animation.capture_keyframe(steps=nb_steps)
-viewer.camera.angles = (0.0, 60.0, 90.0)
-animation.capture_keyframe(steps=nb_steps // 3)
+
+#napari.run()
 
 # Render animation as a GIF:
-animation.animate(
-    join(savepath, f'rot3DUMAP_global.mov'),
-    canvas_only=True,
-    fps=fps,
-    scale_factor=scale_factor
-)
+# animation.animate(
+#     join(savepath, f'rot3DUMAP_global.mov'),
+#     canvas_only=True,
+#     fps=fps,
+#     quality=quality,
+#     scale_factor=scale_factor
+# )
 
 # generate legend
 plt.style.use('dark_background')
@@ -168,7 +198,7 @@ alphabets, digits = string.ascii_lowercase, string.digits
 for i, n in enumerate(df_meta2_ga.groups.keys()):
     n = n.replace('_', ' ')
     plist.append(
-        ax.scatter(i, i, c=np.array(cmap[i] + (1,)).reshape(1, -1), s=40, label=n)
+        ax.scatter(i, i, c=np.array(cmap2[i] + (1,)).reshape(1, -1), s=40, label=n)
     )
     leg_names.append(n)
 legendFig.legend(plist, leg_names, loc='center', frameon=False)
@@ -176,18 +206,22 @@ legendFig.savefig(join(savepath, 'legend_global_annotation.png'), dpi=300)
 legendFig.savefig(join(savepath, 'legend_global_annotation_transparent.png'), dpi=300, transparent=True)
 
 
+
+exit()
+
+
+
 """
-Generate 180 + 60 deg rotation for each time point with different colors
+Generate 360 deg rotation for each time point with different colors
 """
 print('Generating each timepoint...')
 
 
-def single_proc(i0, tp):
+def single_proc(i0, tplist):
     # Make a colormap
-    ind = df_meta_time.get_group(tp)
-    ind1 = df_meta.index.isin(ind.index)
+
     viewer = napari.view_points(
-        df_umap[['UMAP1', 'UMAP2', 'UMAP3']][~ind1],
+        df_umap[['UMAP1', 'UMAP2', 'UMAP3']], #[~ind1],
         scale=(100,) * 3,
         shading='none',
         size=0.06,
@@ -195,18 +229,33 @@ def single_proc(i0, tp):
         edge_width=0,
         face_color=greys,
         ndisplay=3,
-    )
-    viewer.add_points(
-        df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
-        scale=(100,) * 3,
-        shading='none',
-        size=0.06,
-        name=tp,
-        edge_width=0,
-        face_color=np.array(cmap[i0] + (1,)).reshape(1, -1),
         blending='translucent_no_depth',
+        opacity=0.02
+        #
     )
-    viewer.window.resize(1000 + 300, 1000)
+
+    for i, tp in enumerate(tplist):
+        ind = df_meta_time.get_group(tp)
+        ind1 = df_meta.index.isin(ind.index)
+
+        tpcmap = np.array(cmap[i] + (1,)).reshape(1, -1)
+        viewer.add_points(
+            df_umap[['UMAP1', 'UMAP2', 'UMAP3']][ind1],
+            scale=(100,) * 3,
+            shading='none',
+            size=0.06,
+            name=tp,
+            edge_width=0,
+            face_color=tpcmap,
+            edge_color=tpcmap,
+            #blending='translucent_no_depth',
+        )
+
+
+    viewer.theme = viewer_theme
+    viewer.window.resize(viewer_width, viewer_height)
+
+    #napari.run()
 
     animation = Animation(viewer)
 
@@ -216,21 +265,25 @@ def single_proc(i0, tp):
     viewer.reset_view()
 
     # Start recording key frames after changing viewer state:
-    for i in range(div + 2):
-        viewer.camera.angles = (0.0, i * 180 // div + (i0 * 180), 90.0)
-        animation.capture_keyframe(steps=nb_steps // div)
+    for i in range(3):
+        viewer.camera.angles = (0.0, i * 180//6 + i0 * 360//6, 90.0)
+        animation.capture_keyframe(steps=nb_steps//6)
 
     # Render animation as a GIF:
     animation.animate(
-        join(savepath, f'rot3DUMAP_{tp}.mov'),
+        join(savepath, f'rot3DUMAP_{tplist[-1]}.mov'),
         canvas_only=True,
         fps=fps,
+        quality=quality,
         scale_factor=scale_factor
     )
 
+print(f"uniq_time={uniq_time}")
+
+#single_proc(10,uniq_time[:1+10])
 
 _ = Parallel(n_jobs=10)(
-    delayed(single_proc)(i, tp) for i, tp in enumerate(tqdm(uniq_time))
+    delayed(single_proc)(i, uniq_time[:1+i]) for i, tp in enumerate(tqdm(uniq_time))
 )
 
 
@@ -266,7 +319,8 @@ def single_embryo(i0, tp):
         face_color=np.array(cmap[i0] + (1,)).reshape(1, -1),
         blending='translucent_no_depth',
     )
-    viewer.window.resize(1000 + 300, 1000)
+    viewer.theme = viewer_theme
+    viewer.window.resize(viewer_width, viewer_height)
 
     animation = Animation(viewer)
 
@@ -285,6 +339,7 @@ def single_embryo(i0, tp):
         join(savepath, f'rot3DUMAP_{fish_id}_{tp}.mov'),
         canvas_only=True,
         fps=fps,
+        quality=quality,
         scale_factor=scale_factor
     )
 
