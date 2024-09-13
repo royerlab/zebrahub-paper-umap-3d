@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/523447263.svg)](https://zenodo.org/doi/10.5281/zenodo.13761241)
+
 # zebrahub_umap_3d
 Generate 3D UMAPs of zebrahub
 
